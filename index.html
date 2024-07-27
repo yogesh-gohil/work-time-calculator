@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Work Hours Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        .result {
+            font-weight: bold;
+        }
+        .input-time {
+            width: 100px;
+        }
+        .checkbox-container {
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Work Hours Calculator</h1>
+        <table>
+            <tr>
+                <th>Event</th>
+                <th>Time</th>
+            </tr>
+            <tr>
+                <td>Check In</td>
+                <td><input type="time" id="checkIn" class="input-time" value="09:30"></td>
+            </tr>
+            <tr>
+                <td>Lunch Break In</td>
+                <td><input type="time" id="breakIn" class="input-time" value="13:30"></td>
+            </tr>
+            <tr>
+                <td>Lunch Break Out</td>
+                <td><input type="time" id="breakOut" class="input-time" value="14:30"></td>
+            </tr>
+            <tr>
+                <td>Tea Break In</td>
+                <td><input type="time" id="teaBreakIn" class="input-time" value="16:00"></td>
+            </tr>
+            <tr>
+                <td>Tea Break Out</td>
+                <td><input type="time" id="teaBreakOut" class="input-time" value="16:10"></td>
+            </tr>
+            <tr style="display: none;">
+                <td>Check Out</td>
+                <td><input type="time" id="checkOut" disabled class="input-time"></td>
+            </tr>
+        </table>
+        
+        <div class="checkbox-container">
+            <label>
+                <input type="checkbox" id="countBreaks" checked>
+                Count Lunch Breaks
+            </label>
+            <br>
+            <label>
+                <input type="checkbox" id="countTeaBreaks">
+                Count Tea Breaks
+            </label>
+            <br>
+            <br>
+            <label>
+                <input type="checkbox" id="useCustomCheckOut">
+                Check Out Time
+            </label>
+            <br>
+            <label for="customCheckOutTime">Check Out Time:</label>
+            <input type="time" id="customCheckOutTime" disabled class="input-time">
+        </div>
+        
+        <div id="result">
+            <p>Target Hours: <span id="targetHours">08:30</span></p>
+            <p>Total Work Hours: <span id="totalHours">00:00</span></p>
+            <p>Current Time: <span id="currentTime"></span></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('useCustomCheckOut').addEventListener('change', function() {
+            const customCheckOutTime = document.getElementById('customCheckOutTime');
+            if(this.checked) {
+                customCheckOutTime.removeAttribute('disabled');
+            } else {
+                customCheckOutTime.setAttribute('disabled', true);
+            }
+            
+        });
+        // Function to calculate time difference
+        function timeDifference(start, end) {
+            const startTime = new Date(`1970-01-01T${start}:00`);
+            const endTime = new Date(`1970-01-01T${end}:00`);
+            const difference = endTime - startTime;
+            const hours = Math.floor(difference / 1000 / 60 / 60);
+            const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+            return { hours, minutes };
+        }
+
+        // Function to calculate total work hours
+        function calculateTotalWorkHours() {
+            const checkIn = document.getElementById('checkIn').value;
+            const breakIn = document.getElementById('breakIn').value;
+            const breakOut = document.getElementById('breakOut').value;
+            const teaBreakIn = document.getElementById('teaBreakIn').value;
+            const teaBreakOut = document.getElementById('teaBreakOut').value;
+            const checkOut = document.getElementById('checkOut').value;
+            const customCheckOutTime = document.getElementById('customCheckOutTime').value;
+            const useCustomCheckOut = document.getElementById('useCustomCheckOut').checked;
+            const countBreaks = document.getElementById('countBreaks').checked;
+            const countTeaBreaks = document.getElementById('countTeaBreaks').checked;
+
+            // Determine Check Out time to use
+            const finalCheckOutTime = useCustomCheckOut ? customCheckOutTime : checkOut;
+
+            if (!checkIn || !finalCheckOutTime || (countBreaks && (!breakIn || !breakOut)) || (countTeaBreaks && (!teaBreakIn || !teaBreakOut))) {
+                return { hours: 0, minutes: 0 };
+            }
+
+            let totalHours = 0;
+            let totalMinutes = 0;
+
+            if (countBreaks) {
+                // Calculate work hours before the main break
+                if (breakIn) {
+                    const workBeforeBreak = timeDifference(checkIn, breakIn);
+                    totalHours += workBeforeBreak.hours;
+                    totalMinutes += workBeforeBreak.minutes;
+                }
+
+                // Calculate work hours after the main break
+                if (breakOut) {
+                    const workAfterBreak = timeDifference(breakOut, finalCheckOutTime);
+                    totalHours += workAfterBreak.hours;
+                    totalMinutes += workAfterBreak.minutes;
+                }
+            } else {
+                // Calculate total work hours without considering main breaks
+                const workTotal = timeDifference(checkIn, finalCheckOutTime);
+                totalHours += workTotal.hours;
+                totalMinutes += workTotal.minutes;
+            }
+
+            // Adjust total for tea breaks if the checkbox is checked
+            if (countTeaBreaks && teaBreakIn && teaBreakOut) {
+                const teaBreakDuration = timeDifference(teaBreakIn, teaBreakOut);
+                totalHours -= teaBreakDuration.hours;
+                totalMinutes -= teaBreakDuration.minutes;
+            }
+
+            // Normalize minutes to hours
+            const normalizedHours = totalHours + Math.floor(totalMinutes / 60);
+            const normalizedMinutes = totalMinutes % 60;
+
+            return { hours: normalizedHours, minutes: normalizedMinutes };
+        }
+
+        function updateResults() {
+            const { hours, minutes } = calculateTotalWorkHours();
+            document.getElementById('totalHours').textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+            const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            document.getElementById('currentTime').textContent = currentTime;
+        }
+
+        function setDefaultCustomCheckOutTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('customCheckOutTime').value = `${hours}:${minutes}`;
+        }
+
+        function updateCheckOutTime() {
+            if (!document.getElementById('useCustomCheckOut').checked) {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                document.getElementById('checkOut').value = `${hours}:${minutes}`;
+            }
+            updateResults();
+        }
+
+        // Update the Check Out time and recalculate every minute if not using custom Check Out
+        setInterval(updateCheckOutTime, 1000); // 60,000 milliseconds = 1 minute
+
+        // Set default custom Check Out time and initialize results on page load
+        window.addEventListener('load', function() {
+            setDefaultCustomCheckOutTime();
+            updateCheckOutTime(); // Set initial Check Out time and update results
+        });
+
+        // Add event listeners to update results when time inputs or checkboxes change
+        document.querySelectorAll('.input-time').forEach(input => {
+            input.addEventListener('change', updateResults);
+        });
+        document.getElementById('countBreaks').addEventListener('change', updateResults);
+        document.getElementById('countTeaBreaks').addEventListener('change', updateResults);
+        document.getElementById('useCustomCheckOut').addEventListener('change', updateResults);
+        document.getElementById('customCheckOutTime').addEventListener('change', updateResults);
+    </script>
