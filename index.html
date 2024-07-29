@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,36 +10,48 @@
             font-family: Arial, sans-serif;
             margin: 20px;
         }
+
         .container {
             max-width: 600px;
             margin: 0 auto;
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
         }
-        table, th, td {
+
+        table,
+        th,
+        td {
             border: 1px solid #ddd;
         }
-        th, td {
+
+        th,
+        td {
             padding: 8px;
             text-align: center;
         }
+
         th {
             background-color: #f4f4f4;
         }
+
         .result {
             font-weight: bold;
         }
+
         .input-time {
             width: 100px;
         }
+
         .checkbox-container {
             margin: 10px 0;
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>Work Hours Calculator</h1>
@@ -72,7 +85,7 @@
                 <td><input type="time" id="checkOut" disabled class="input-time"></td>
             </tr>
         </table>
-        
+
         <div class="checkbox-container">
             <label>
                 <input type="checkbox" id="countBreaks" checked>
@@ -93,24 +106,62 @@
             <label for="customCheckOutTime">Check Out Time:</label>
             <input type="time" id="customCheckOutTime" disabled class="input-time">
         </div>
-        
+
         <div id="result">
             <p>Target Hours: <span id="targetHours">08:30</span></p>
-            <p>Total Work Hours: <span id="totalHours" style="color:red; font-weight: 700;">00:00</span></p>
-            <p>Current Time: <span id="currentTime"></span></p>
+            <p>Total Work Hours: <span id="totalHours" style="color:green; font-weight: 700;">00:00</span></p>
+            <hr />
+            <p>Check-Out Time: <span id="estimatedCheckOutTime" style="color:red; font-weight: 700;">--:--</span></p>
+            <p>Current Time: <span id="currentTime" style="color:blue; font-weight: 700;"></span></p>
         </div>
     </div>
 
     <script>
-        document.getElementById('useCustomCheckOut').addEventListener('change', function() {
+        // Function to calculate estimated check-out time
+        function calculateEstimatedCheckOutTime() {
+            const targetHours = 8;
+            const targetMinutes = 30;
+
+            // Calculate total work hours
+            const { hours: workedHours, minutes: workedMinutes } = calculateTotalWorkHours();
+
+            // Calculate the remaining time needed
+            const totalWorkedMinutes = workedHours * 60 + workedMinutes;
+            const targetTotalMinutes = targetHours * 60 + targetMinutes;
+            const remainingMinutes = targetTotalMinutes - totalWorkedMinutes;
+
+            // Get the current check-out time or use the custom check-out time
+            const currentCheckOutTime = document.getElementById('useCustomCheckOut').checked
+                ? document.getElementById('customCheckOutTime').value
+                : document.getElementById('checkOut').value;
+
+            if (!currentCheckOutTime) {
+                return 'Check-out time is not set';
+            }
+
+            // Calculate estimated check-out time
+            const [currentHours, currentMinutes] = currentCheckOutTime.split(':').map(Number);
+            const endTime = new Date();
+            endTime.setHours(currentHours, currentMinutes);
+
+            endTime.setMinutes(endTime.getMinutes() + remainingMinutes);
+
+            const estimatedHours = endTime.getHours();
+            const estimatedMinutes = endTime.getMinutes();
+
+            return `${String(estimatedHours).padStart(2, '0')}:${String(estimatedMinutes).padStart(2, '0')}`;
+        }
+
+
+        document.getElementById('useCustomCheckOut').addEventListener('change', function () {
             const customCheckOutTime = document.getElementById('customCheckOutTime');
-            if(this.checked) {
+            if (this.checked) {
                 customCheckOutTime.removeAttribute('disabled');
                 setDefaultCustomCheckOutTime()
             } else {
                 customCheckOutTime.setAttribute('disabled', true);
             }
-            
+
         });
         // Function to calculate time difference
         function timeDifference(start, end) {
@@ -186,7 +237,12 @@
 
             const currentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             document.getElementById('currentTime').textContent = currentTime;
+
+            // Update the estimated check-out time
+            const estimatedCheckOutTime = calculateEstimatedCheckOutTime();
+            document.getElementById('estimatedCheckOutTime').textContent = estimatedCheckOutTime;
         }
+
 
         function setDefaultCustomCheckOutTime() {
             const now = new Date();
@@ -209,7 +265,7 @@
         setInterval(updateCheckOutTime, 1000); // 60,000 milliseconds = 1 minute
 
         // Set default custom Check Out time and initialize results on page load
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             setDefaultCustomCheckOutTime();
             updateCheckOutTime(); // Set initial Check Out time and update results
         });
