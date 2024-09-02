@@ -108,10 +108,10 @@
         </div>
 
         <div id="result">
-            <p>Target Hours: <span id="targetHours">08:30</span></p>
-            <p>Total Work Hours: <span id="totalHours" style="color:green; font-weight: 700;">00:00</span></p>
+            <p>Target Hours: <span id="targetHours">08:00</span></p>
+            <p>Total Work Hours: <span id="totalHours" style="color:red; font-weight: 700;">00:00</span></p>
             <hr />
-            <p>Check-Out Time: <span id="estimatedCheckOutTime" style="color:red; font-weight: 700;">--:--</span></p>
+            <p>Check-Out Time: <span id="estimatedCheckOutTime" style="color:green; font-weight: 700;">--:--</span></p>
             <p>Current Time: <span id="currentTime" style="color:blue; font-weight: 700;"></span></p>
         </div>
     </div>
@@ -120,7 +120,7 @@
         // Function to calculate estimated check-out time
         function calculateEstimatedCheckOutTime() {
             const targetHours = 8;
-            const targetMinutes = 30;
+            const targetMinutes = 0;
 
             // Calculate total work hours
             const { hours: workedHours, minutes: workedMinutes } = calculateTotalWorkHours();
